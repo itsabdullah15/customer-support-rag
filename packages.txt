@@ -1,4 +1,1 @@
-swig
-g++
-make
-libopenblas-dev
+build-essential\nswig\nlibopenblas-dev\npython3-dev
