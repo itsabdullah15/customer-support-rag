@@ -14,15 +14,17 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot trained o
 CUSTOMER-SUPPORT-RAG/
 ├── app/
 │   ├── __pycache__/
-│   ├── documents.json
-│   ├── faiss_index.index
-│   ├── ingest.ipynb
-│   ├── interface.py
-│   └── rag_chain.py
+│   ├── documents.json              # JSON file with document texts
+│   ├── faiss_index.index           # FAISS index for retrieval
+│   ├── ingest.ipynb                # Notebook for ingesting data
+│   ├── interface.py                # Streamlit app interface
+│   └── rag_chain.py                # RAG logic and pipeline
+│
 ├── data/
 │   ├── angelone_quick_10_links_support_data.json
 │   ├── angelone_support_full_data.json
 │   └── insurance_pdfs_text.json
+│
 ├── Data Gathering/
 │   ├── Insurance PDFs/
 │   ├── angelone_quick_10_links_support_data.json
@@ -30,9 +32,11 @@ CUSTOMER-SUPPORT-RAG/
 │   ├── insurance_pdfs_text.json
 │   ├── insurance_pdfs_text1.json
 │   └── data_gathering.ipynb
-├── .env
-├── README.md
-├── requirements.txt
+│
+├── .env                            # Environment variables (GROQ_API_KEY)
+├── README.md                       # Project documentation
+├── requirements.txt                # Python dependencies
+
 
 
 🛠️ Requirements
