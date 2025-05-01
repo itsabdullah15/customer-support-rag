@@ -1,9 +1,10 @@
-# Streamlit or FastAPI apps
+# Streamlit App
 
 import streamlit as st
-from rag_chain import main  # Replace with your actual script name
+from rag_chain import main  
 
-st.set_page_config(page_title="FAISS + Groq QA", layout="centered")
+
+st.set_page_config(page_title="Pinecone + Groq QA", layout="centered")
 st.title("🧠 Customer Support Assistant")
 
 query = st.text_input("Enter your question:")
