@@ -1,1 +1,4 @@
 swig
+g++
+make
+libopenblas-dev
