@@ -12,3 +12,4 @@ numpy==1.26.4
 pandas==2.2.2
 python-dotenv==1.0.1
 pinecone
+huggingface-hub==0.20.3

@@ -1,7 +1,7 @@
 # Streamlit App
 
 import streamlit as st
-from rag_chain import main  
+from app.rag_chain import main  
 
 
 st.set_page_config(page_title="Pinecone + Groq QA", layout="centered")
