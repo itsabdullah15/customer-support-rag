@@ -1,49 +1,67 @@
-RAG Chatbot for Customer Support
-This project implements a Retrieval-Augmented Generation (RAG) chatbot trained on customer support documentation. It retrieves relevant information using FAISS and generates answers using the Groq language model (LLaMA-3.1-8B). It includes a Streamlit-based interface and is designed to only answer questions based on the provided context, returning "I don't know" for out-of-scope queries.
+# 🤖 RAG Chatbot for Customer Support
 
-🚀 Features
+A Retrieval-Augmented Generation (RAG) chatbot designed to assist with customer support by retrieving relevant information from documentation and generating answers using **Groq's LLaMA-3.1-8B** model. It includes a user-friendly **Streamlit UI** and strictly answers based on the given context.
 
-🔍 Document Retrieval: Uses FAISS to fetch top 3 most relevant documents from indexed embeddings.
-🤖 Answer Generation: Uses Groq's LLaMA-3.1-8B model to generate contextual answers.
-❓ Out-of-Scope Handling: Returns "I don't know" when the answer is not in the provided documents.
-🖥️ User Interface: Streamlit UI with expandable document views for transparency.
-🧱 Modular Design: Separates UI (app.py) and RAG logic (rag_chain.py) for easy maintenance.
+> 💡 For out-of-scope queries, the chatbot responds with **"I don't know."**
 
+---
 
-📁 Project Structure
+## 🚀 Features
+
+- 🔍 **Document Retrieval**  
+  Retrieves top 3 relevant documents using **FAISS**.
+
+- 🤖 **Answer Generation**  
+  Uses **Groq's LLaMA-3.1-8B** model for context-aware responses.
+
+- ❓ **Out-of-Scope Handling**  
+  Replies with _"I don't know"_ when content is missing from the docs.
+
+- 🖥️ **User Interface**  
+  Built with **Streamlit**; includes expandable context views.
+
+- 🧱 **Modular Design**  
+  Clean separation between UI (`interface.py`) and logic (`rag_chain.py`).
+
+---
+
+## 📁 Project Structure
+
+```
 CUSTOMER-SUPPORT-RAG/
 ├── app/
 │   ├── __pycache__/
-│   ├── documents.json              # JSON file with document texts
-│   ├── faiss_index.index           # FAISS index for retrieval
-│   ├── ingest.ipynb                # Notebook for ingesting data
-│   ├── interface.py                # Streamlit app interface
-│   └── rag_chain.py                # RAG logic and pipeline
-│
+│   ├── documents.json              # Document texts
+│   ├── faiss_index.index           # FAISS index
+│   ├── ingest.ipynb                # Data ingestion notebook
+│   ├── interface.py                # Streamlit UI
+│   └── rag_chain.py                # Core RAG logic
 ├── data/
 │   ├── angelone_quick_10_links_support_data.json
 │   ├── angelone_support_full_data.json
 │   └── insurance_pdfs_text.json
-│
 ├── Data Gathering/
-│   ├── Insurance PDFs/
-│   ├── angelone_quick_10_links_support_data.json
-│   ├── angelone_support_full_data.json
-│   ├── insurance_pdfs_text.json
-│   ├── insurance_pdfs_text1.json
-│   └── data_gathering.ipynb
-│
-├── .env                            # Environment variables (GROQ_API_KEY)
-├── README.md                       # Project documentation
-├── requirements.txt                # Python dependencies
+│   ├── data_gathering.ipynb
+│   └── Insurance PDFs/
+│       └── (PDF text JSON files)
+├── .env                            # Environment vars (GROQ_API_KEY)
+├── README.md
+├── requirements.txt
+```
 
+---
 
+## 🛠️ Installation
 
-🛠️ Requirements
-To install the required dependencies, run:
+Install the required dependencies:
+
+```bash
 pip install -r requirements.txt
+```
 
-requirements.txt
+### `requirements.txt` includes:
+
+```txt
 langchain==0.1.10
 openai==1.19.0
 faiss-cpu==1.7.4
@@ -58,51 +76,67 @@ tqdm==4.66.2
 numpy==1.26.4
 pandas==2.2.2
 python-dotenv==1.0.1
+```
 
+---
 
-🔑 Environment Setup
-Create a .env file in the root directory with your Groq API key:
+## 🔑 Environment Setup
+
+Create a `.env` file in the root directory with your Groq API key:
+
+```
 GROQ_API_KEY=your_groq_api_key_here
+```
 
+---
 
-🚀 Running the Application
+## 🚦 Running the Application
 
-Ingest Data (if not already done):
+### Step 1: Ingest Data
 
-Run the ingest.ipynb notebook to process documents and create the FAISS index (faiss_index.index) and documents.json.
+Run `ingest.ipynb` to generate:
 
+- `faiss_index.index`
+- `documents.json`
 
-Start the Streamlit App:
+### Step 2: Start Streamlit App
+
+```bash
 streamlit run app/interface.py
+```
 
+### Step 3: Interact with Chatbot
 
-Interact with the Chatbot:
+- Open browser: [http://localhost:8501](http://localhost:8501)
+- Ask questions related to support documents.
+- View retrieved documents by expanding the UI panels.
 
-Open the provided local URL (e.g., http://localhost:8501) in your browser.
-Ask questions related to the customer support documentation.
-Expand the document sections to view retrieved context.
+---
 
+## 📝 Notes
 
+- Only answers based on provided documents.
+- If FAISS index is missing, re-run `ingest.ipynb`.
+- Keep `documents.json` and `faiss_index.index` inside `/app`.
 
+---
 
-📝 Notes
+## ❗ Troubleshooting
 
-The chatbot is designed to only answer based on the provided documents. If a question is out of scope, it will respond with "I don't know".
-Ensure the FAISS index and documents.json are present in the app/ directory before running the app.
-The data in the data/ and Data Gathering/ directories includes JSON files with customer support data and extracted text from insurance PDFs.
+- **Missing FAISS Index**  
+  → Re-run `ingest.ipynb`.
 
+- **API Key Issues**  
+  → Check your `.env` file and make sure it's loaded.
 
-🛠️ Troubleshooting
+- **Dependency Errors**  
+  → Ensure all packages are installed using the correct versions.
 
-Missing FAISS Index: Run ingest.ipynb to generate faiss_index.index and documents.json.
-API Key Issues: Verify the GROQ_API_KEY in the .env file.
-Dependency Errors: Ensure all packages in requirements.txt are installed correctly using the specified versions.
+---
 
+## 📚 References
 
-📚 References
-
-LangChain Documentation
-FAISS
-Streamlit
-Groq API
-
+- [LangChain Docs](https://docs.langchain.com/)
+- [FAISS](https://github.com/facebookresearch/faiss)
+- [Streamlit](https://streamlit.io/)
+- [Groq API](https://groq.com/)
