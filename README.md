@@ -113,6 +113,18 @@ streamlit run app/interface.py
 
 ---
 
+## 🎯 Example Responses
+
+### ✅ In-Context Question
+- The user asks a question that is present in the documents, so the chatbot provides a detailed answer.
+![alt text](image.png)
+
+### ❌ Out-of-Context Question
+- The user asks a question that is not covered in the documents, so the chatbot replies with:
+![alt text](image-1.png)
+
+--- 
+
 ## 📝 Notes
 
 - Only answers based on provided documents.
