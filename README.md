@@ -9,7 +9,7 @@ A Retrieval-Augmented Generation (RAG) chatbot designed to assist with customer 
 ## 🚀 Features
 
 - 🔍 **Document Retrieval**  
-  Retrieves top 3 relevant documents using **FAISS**.
+  Retrieves top 3 relevant documents using **Pinecone**.
 
 - 🤖 **Answer Generation**  
   Uses **Groq's LLaMA-3.1-8B** model for context-aware responses.
@@ -32,7 +32,6 @@ CUSTOMER-SUPPORT-RAG/
 ├── app/
 │   ├── __pycache__/
 │   ├── documents.json              # Document texts
-│   ├── faiss_index.index           # FAISS index
 │   ├── ingest.ipynb                # Data ingestion notebook
 │   ├── interface.py                # Streamlit UI
 │   └── rag_chain.py                # Core RAG logic
@@ -64,7 +63,7 @@ pip install -r requirements.txt
 ```txt
 langchain==0.1.10
 openai==1.19.0
-faiss-cpu==1.7.4
+pinecone
 sentence-transformers==2.2.2
 PyPDF2==3.0.1
 pdfplumber==0.10.2
@@ -86,6 +85,7 @@ Create a `.env` file in the root directory with your Groq API key:
 
 ```
 GROQ_API_KEY=your_groq_api_key_here
+PINECONE_API_KEY=your_pinecone_api_key_here
 ```
 
 ---
@@ -96,7 +96,6 @@ GROQ_API_KEY=your_groq_api_key_here
 
 Run `ingest.ipynb` to generate:
 
-- `faiss_index.index`
 - `documents.json`
 
 ### Step 2: Start Streamlit App
@@ -149,6 +148,6 @@ streamlit run app/interface.py
 ## 📚 References
 
 - [LangChain Docs](https://docs.langchain.com/)
-- [FAISS](https://github.com/facebookresearch/faiss)
+- [Pinecone](https://docs.pinecone.io/guides/get-started/overview)
 - [Streamlit](https://streamlit.io/)
 - [Groq API](https://groq.com/)
