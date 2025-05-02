@@ -127,8 +127,7 @@ streamlit run app/interface.py
 ## 📝 Notes
 
 - Only answers based on provided documents.
-- If FAISS index is missing, re-run `ingest.ipynb`.
-- Keep `documents.json` and `faiss_index.index` inside `/app`.
+- Keep `documents.json` inside `/app`.
 
 ---
 
