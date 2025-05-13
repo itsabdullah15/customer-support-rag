@@ -1,27 +1,27 @@
 # 🤖 RAG Chatbot for Customer Support
 
-A Retrieval-Augmented Generation (RAG) chatbot designed to assist with customer support by retrieving relevant information from documentation and generating answers using **Groq's LLaMA-3.1-8B** model. It includes a user-friendly **Streamlit UI** and strictly answers based on the given context.
+A Retrieval-Augmented Generation (RAG) chatbot that enhances customer support by retrieving relevant documentation and generating accurate responses using **Groq's LLaMA-3.1-8B** model. The chatbot features an intuitive **Streamlit UI** and responds strictly based on the provided context.
 
-> 💡 For out-of-scope queries, the chatbot responds with **"I don't know."**
+> 💡 For queries outside the provided documentation, it replies: **"I don't know."**
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- 🔍 **Document Retrieval**  
-  Retrieves top 3 relevant documents using **Pinecone**.
+- 🔍 **Smart Document Retrieval**  
+  Uses **Pinecone** to fetch the top 3 relevant documents.
 
-- 🤖 **Answer Generation**  
-  Uses **Groq's LLaMA-3.1-8B** model for context-aware responses.
+- 🤖 **Context-Aware Answer Generation**  
+  Powered by **Groq's LLaMA-3.1-8B** for precise responses.
 
-- ❓ **Out-of-Scope Handling**  
-  Replies with _"I don't know"_ when content is missing from the docs.
+- ❓ **Out-of-Scope Detection**  
+  Answers _"I don't know"_ if information isn't available in the documents.
 
-- 🖥️ **User Interface**  
-  Built with **Streamlit**; includes expandable context views.
+- 🖥️ **Interactive UI**  
+  Built with **Streamlit**, includes expandable context sections.
 
-- 🧱 **Modular Design**  
-  Clean separation between UI (`interface.py`) and logic (`rag_chain.py`).
+- 🧱 **Modular Codebase**  
+  Clean separation between UI (`interface.py`) and backend logic (`rag_chain.py`).
 
 ---
 
@@ -31,19 +31,17 @@ A Retrieval-Augmented Generation (RAG) chatbot designed to assist with customer 
 CUSTOMER-SUPPORT-RAG/
 ├── app/
 │   ├── __pycache__/
-│   ├── documents.json              # Document texts
-│   ├── ingest.ipynb                # Data ingestion notebook
-│   ├── interface.py                # Streamlit UI
+│   ├── documents.json              # Indexed document data
+│   ├── ingest.ipynb                # Notebook for data ingestion
+│   ├── interface.py                # Streamlit app
 │   └── rag_chain.py                # Core RAG logic
-├── data/
+├── 01_data_gathering_logic/
 │   ├── angelone_quick_10_links_support_data.json
 │   ├── angelone_support_full_data.json
-│   └── insurance_pdfs_text.json
-├── Data Gathering/
-│   ├── data_gathering.ipynb
+│   ├── insurance_pdfs_flat.json
 │   └── Insurance PDFs/
-│       └── (PDF text JSON files)
-├── .env                            # Environment vars (GROQ_API_KEY)
+│       └── PDFs/
+├── .env                            # Environment variables (GROQ_API_KEY & PINECONE_API_KEY)
 ├── README.md
 ├── requirements.txt
 ```
@@ -52,13 +50,13 @@ CUSTOMER-SUPPORT-RAG/
 
 ## 🛠️ Installation
 
-Install the required dependencies:
+Install all dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### `requirements.txt` includes:
+### Included in `requirements.txt`:
 
 ```txt
 langchain==0.1.10
@@ -69,7 +67,6 @@ PyPDF2==3.0.1
 pdfplumber==0.10.2
 beautifulsoup4==4.12.3
 requests==2.31.0
-lxml==5.2.1
 streamlit==1.33.0
 tqdm==4.66.2
 numpy==1.26.4
@@ -79,9 +76,9 @@ python-dotenv==1.0.1
 
 ---
 
-## 🔑 Environment Setup
+## 🔑 Environment Configuration
 
-Create a `.env` file in the root directory with your Groq API key:
+Create a `.env` file in the project root:
 
 ```
 GROQ_API_KEY=your_groq_api_key_here
@@ -90,63 +87,71 @@ PINECONE_API_KEY=your_pinecone_api_key_here
 
 ---
 
-## 🚦 Running the Application
+## 🚦 How to Run
 
-### Step 1: Ingest Data
+### 1. Ingest Data
 
-Run `ingest.ipynb` to generate:
+Run the ingestion notebook to generate the document index:
 
-- `documents.json`
+```bash
+open app/ingest.ipynb
+```
 
-### Step 2: Start Streamlit App
+- Output: `documents.json`
+
+### 2. Launch the Chatbot
 
 ```bash
 streamlit run app/interface.py
 ```
 
-### Step 3: Interact with Chatbot
+### 3. Start Interacting
 
-- Open browser: [http://localhost:8501](http://localhost:8501)
-- Ask questions related to support documents.
-- View retrieved documents by expanding the UI panels.
+- Open: [http://localhost:8501](http://localhost:8501)
+- Ask questions based on the uploaded support documents.
+- View supporting documents by expanding the UI panels.
 
 ---
 
-## 🎯 Example Responses
+## 🎯 Example Chatbot Behavior
 
-### ✅ In-Context Question
-- The user asks a question that is present in the documents, so the chatbot provides a detailed answer.
-![alt text](image.png)
+### ✅ Supported Question
 
-### ❌ Out-of-Context Question
-- The user asks a question that is not covered in the documents, so the chatbot replies with:
-![alt text](image-1.png)
+- When the answer is found in the documents:
 
---- 
+![In-context response](image.png)
+
+### ❌ Unsupported Question
+
+- When the query is not covered:
+
+![Out-of-context response](image-1.png)
+
+---
 
 ## 📝 Notes
 
-- Only answers based on provided documents.
-- Keep `documents.json` inside `/app`.
+- Responses are limited to the content in `documents.json`.
+- Ensure `documents.json` remains in the `/app` directory.
 
 ---
 
 ## ❗ Troubleshooting
 
-- **Missing FAISS Index**  
+- **Missing Document Index**  
   → Re-run `ingest.ipynb`.
 
-- **API Key Issues**  
-  → Check your `.env` file and make sure it's loaded.
+- **API Key Not Found**  
+  → Verify `.env` file exists and contains valid keys.
 
-- **Dependency Errors**  
-  → Ensure all packages are installed using the correct versions.
+- **Package Errors**  
+  → Confirm all packages are installed with the correct versions.
 
 ---
 
-## 📚 References
+## 📚 Resources
 
-- [LangChain Docs](https://docs.langchain.com/)
-- [Pinecone](https://docs.pinecone.io/guides/get-started/overview)
+- [LangChain Documentation](https://docs.langchain.com/)
+- [Pinecone Docs](https://docs.pinecone.io/guides/get-started/overview)
 - [Streamlit](https://streamlit.io/)
 - [Groq API](https://groq.com/)
