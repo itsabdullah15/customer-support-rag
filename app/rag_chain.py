@@ -96,14 +96,18 @@ def query_groq_model(prompt: str, api_key: str, model_name: str = LLM_MODEL_NAME
 
 # Prompt Template
 prompt_template = PromptTemplate.from_template(
-    """You are a helpful assistant. Use the context below to answer the question.
+    """You are a knowledgeable and concise assistant. Answer the question strictly based on the information provided in the context below. 
+Do not use prior knowledge or make assumptions. If the answer is not present in the context, respond with: "I don't know" or "The context does not provide that information."
 
 Context:
 {context}
 
 Question:
-{question}"""
+{question}
+
+Answer:"""
 )
+
 
 # LangChain Runnables
 def embed_query_fn(query: str) -> List[float]:
