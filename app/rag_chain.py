@@ -1,199 +1,60 @@
-# Load FAISS + Groq LLM → build QA chain
-# import os
-# import json
-# import faiss
-# import numpy as np
-# import requests
-# from sentence_transformers import SentenceTransformer
-# from pathlib import Path
-# from typing import List, Dict
-# from dotenv import load_dotenv
-
-# load_dotenv()
-
-# # Configuration
-# BASE_DIR = Path(__file__).parent
-# INDEX_PATH = BASE_DIR / "faiss_index.index"
-# DOCS_PATH = BASE_DIR / "documents.json"
-# GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-# MODEL_NAME = "llama-3.1-8b-instant"
-# EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-# K = 3  # Number of documents to retrieve
-
-# def load_resources(index_path: str, docs_path: str) -> tuple[faiss.Index, List[str]]:
-#     """Load FAISS index and document texts with error handling."""
-#     try:
-#         index = faiss.read_index(str(index_path))
-#         with open(docs_path, "r", encoding="utf-8") as f:
-#             texts = json.load(f)
-#         return index, texts
-#     except FileNotFoundError as e:
-#         raise FileNotFoundError(f"Resource not found: {e}")
-#     except Exception as e:
-#         raise Exception(f"Failed to load resources: {e}")
-
-# def get_groq_api_key() -> str:
-#     """Retrieve Groq API key with validation."""
-#     api_key = os.getenv("GROQ_API_KEY")
-#     if not api_key:
-#         raise ValueError("GROQ_API_KEY environment variable not set.")
-#     return api_key
-
-# def search_documents(index: faiss.Index, texts: List[str], query: str, model: SentenceTransformer, k: int = 3) -> List[str]:
-#     """Embed query and retrieve top-k documents."""
-#     query_vector = model.encode(query, convert_to_numpy=True)
-#     D, I = index.search(query_vector[np.newaxis, :], k)  # Ensure correct shape
-#     return [texts[i] for i in I[0] if i < len(texts)]  # Guard against invalid indices
-
-# def query_groq(context: str, query: str, api_key: str, model_name: str = MODEL_NAME) -> str:
-#     """Query Groq API with context and question."""
-#     headers = {
-#         "Authorization": f"Bearer {api_key}",
-#         "Content-Type": "application/json"
-#     }
-#     data = {
-#         "model": model_name,
-#         "messages": [
-#             {"role": "system", "content": "You are a helpful assistant answering based only on the provided context."},
-#             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
-#         ],
-#         "temperature": 0.5,
-#         "max_tokens": 512
-#     }
-#     try:
-#         response = requests.post(GROQ_API_URL, headers=headers, json=data)
-#         response.raise_for_status()  # Raise exception for bad status codes
-#         return response.json()["choices"][0]["message"]["content"]
-#     except requests.RequestException as e:
-#         raise Exception(f"Groq API request failed: {e}")
-
-# def truncate_context(documents: List[str], max_length: int = 4000) -> str:
-#     """Truncate documents to fit within token limits."""
-#     context = ""
-#     for doc in documents:
-#         if len(context) + len(doc) + 2 > max_length:
-#             remaining = max_length - len(context) - 2
-#             context += doc[:remaining] + "\n\n"
-#             break
-#         context += doc + "\n\n"
-#     return context.strip()
-
-# def main(query: str) -> None:
-#     """Main function to run the QA pipeline."""
-#     try:
-#         # Load resources
-#         index, texts = load_resources(INDEX_PATH, DOCS_PATH)
-#         api_key = get_groq_api_key()
-
-#         # Initialize embedding model
-#         model = SentenceTransformer(EMBEDDING_MODEL)
-
-#         # Search for relevant documents
-#         retrieved_docs = search_documents(index, texts, query, model, K)
-#         if not retrieved_docs:
-#             print("No relevant documents found.")
-#             return
-
-#         # Truncate and format context
-#         context = truncate_context(retrieved_docs)
-
-#         # Query Groq LLM
-#         answer = query_groq(context, query, api_key)
-#         print("Answer:", answer)
-#         return answer
-
-#     except Exception as e:
-#         print("Error:", str(e))
-
-
-
 import os
 import json
-import numpy as np
-import pinecone
-import requests
-from sentence_transformers import SentenceTransformer
+import logging
 from pathlib import Path
-from typing import List, Dict
+from typing import List
+import requests
+import pinecone
 from dotenv import load_dotenv
+from sentence_transformers import SentenceTransformer
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnableLambda
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="tensorflow")
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "3"
 
+# Load environment variables
 load_dotenv()
 
-# Configuration
+# Logging setup
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Config
 BASE_DIR = Path(__file__).parent
 DOCS_PATH = BASE_DIR / "documents.json"
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 PINECONE_INDEX_NAME = "vector-search-index"
-MODEL_NAME = "llama-3.1-8b-instant"
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-K = 3  # Number of documents to retrieve
+EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+LLM_MODEL_NAME = "llama-3.1-8b-instant"
+TOP_K = 3
+MAX_CONTEXT_LENGTH = 4000
+
+
+# === UTILS ===
 
 def get_pinecone_client() -> pinecone.Pinecone:
-    """Initialize and return Pinecone client."""
     api_key = os.getenv("PINECONE_API_KEY")
     if not api_key:
-        raise ValueError("PINECONE_API_KEY environment variable not set.")
+        raise ValueError("PINECONE_API_KEY not found.")
     return pinecone.Pinecone(api_key=api_key)
 
-def load_resources(docs_path: str) -> List[str]:
-    """Load document texts with error handling."""
-    try:
-        with open(docs_path, "r", encoding="utf-8") as f:
-            texts = json.load(f)
-        return texts
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"Resource not found: {e}")
-    except Exception as e:
-        raise Exception(f"Failed to load resources: {e}")
-
 def get_groq_api_key() -> str:
-    """Retrieve Groq API key with validation."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise ValueError("GROQ_API_KEY environment variable not set.")
+        raise ValueError("GROQ_API_KEY not found.")
     return api_key
 
-def search_documents(index: pinecone.Index, texts: List[str], query: str, model: SentenceTransformer, k: int = 3) -> List[str]:
-    """Embed query and retrieve top-k documents from Pinecone."""
-    try:
-        query_vector = model.encode(query, convert_to_numpy=True)
-        results = index.query(vector=query_vector.tolist(), top_k=k)
-        # Retrieve texts corresponding to returned IDs
-        retrieved_docs = []
-        for match in results['matches']:
-            doc_id = int(match['id'])  # IDs are strings in Pinecone, convert to int
-            if doc_id < len(texts):
-                retrieved_docs.append(texts[doc_id])
-        return retrieved_docs
-    except Exception as e:
-        raise Exception(f"Failed to search documents: {e}")
+def load_documents(doc_path: Path) -> List[str]:
+    if not doc_path.exists():
+        raise FileNotFoundError(f"{doc_path} not found.")
+    with doc_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
-def query_groq(context: str, query: str, api_key: str, model_name: str = MODEL_NAME) -> str:
-    """Query Groq API with context and question."""
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": model_name,
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant answering based only on the provided context."},
-            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
-        ],
-        "temperature": 0.5,
-        "max_tokens": 512
-    }
-    try:
-        response = requests.post(GROQ_API_URL, headers=headers, json=data)
-        response.raise_for_status()  # Raise exception for bad status codes
-        return response.json()["choices"][0]["message"]["content"]
-    except requests.RequestException as e:
-        raise Exception(f"Groq API request failed: {e}")
-
-def truncate_context(documents: List[str], max_length: int = 4000) -> str:
-    """Truncate documents to fit within token limits."""
+def truncate_documents(docs: List[str], max_length: int) -> str:
     context = ""
-    for doc in documents:
+    for doc in docs:
         if len(context) + len(doc) + 2 > max_length:
             remaining = max_length - len(context) - 2
             context += doc[:remaining] + "\n\n"
@@ -201,38 +62,101 @@ def truncate_context(documents: List[str], max_length: int = 4000) -> str:
         context += doc + "\n\n"
     return context.strip()
 
-def main(query: str) -> None:
-    """Main function to run the QA pipeline."""
+def search_documents(index: pinecone.Index, query_vec: List[float], all_docs: List[str], k: int = 3) -> List[str]:
     try:
-        # Initialize Pinecone client and index
-        pinecone_client = get_pinecone_client()
-        index = pinecone_client.Index(PINECONE_INDEX_NAME)
+        results = index.query(vector=query_vec, top_k=k)
+        return [all_docs[int(match["id"])] for match in results.get("matches", []) if int(match["id"]) < len(all_docs)]
+    except Exception as e:
+        raise RuntimeError(f"Document search failed: {e}")
 
-        # Load document texts
-        texts = load_resources(DOCS_PATH)
+def query_groq_model(prompt: str, api_key: str, model_name: str = LLM_MODEL_NAME) -> str:
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": model_name,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant answering based on the context."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.5,
+        "max_tokens": 512
+    }
 
-        # Initialize embedding model
-        model = SentenceTransformer(EMBEDDING_MODEL)
+    try:
+        response = requests.post(GROQ_API_URL, headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+    except requests.RequestException as e:
+        raise RuntimeError(f"Groq API call failed: {e}")
 
-        # Search for relevant documents
-        retrieved_docs = search_documents(index, texts, query, model, K)
-        if not retrieved_docs:
-            print("No relevant documents found.")
-            return
 
-        # Truncate and format context
-        context = truncate_context(retrieved_docs)
+# === LANGCHAIN COMPONENTS ===
 
-        # Query Groq LLM
-        api_key = get_groq_api_key()
-        answer = query_groq(context, query, api_key)
+# Prompt Template
+prompt_template = PromptTemplate.from_template(
+    """You are a helpful assistant. Use the context below to answer the question.
+
+Context:
+{context}
+
+Question:
+{question}"""
+)
+
+# LangChain Runnables
+def embed_query_fn(query: str) -> List[float]:
+    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+    return model.encode(query, convert_to_numpy=True).tolist()
+
+embed_chain = RunnableLambda(embed_query_fn)
+
+
+# === MAIN CHAIN ===
+
+def prepare_query(query: str, docs: List[str]) -> str:
+    query_vector = embed_chain.invoke(query)
+    index = get_pinecone_client().Index(PINECONE_INDEX_NAME)
+    relevant_docs = search_documents(index, query_vector, docs, TOP_K)
+
+    if not relevant_docs:
+        return "No relevant documents found."
+
+    context = truncate_documents(relevant_docs, MAX_CONTEXT_LENGTH)
+    prompt = prompt_template.invoke({
+        "context": context,
+        "question": query
+    })
+
+    # Ensure prompt is a string
+    return prompt.get_text() if hasattr(prompt, "get_text") else str(prompt)
+
+
+
+def generate_answer(prompt: str) -> str:
+    groq_key = get_groq_api_key()
+    return query_groq_model(prompt, groq_key)
+
+
+def main(query: str) -> str:
+    try:
+        logger.info("Loading resources...")
+        docs = load_documents(DOCS_PATH)
+        prompt = prepare_query(query, docs)
+
+        logger.info("Calling Groq LLM...")
+        answer = generate_answer(prompt)
+
         print("Answer:", answer)
         return answer
 
     except Exception as e:
-        print("Error:", str(e))
+        logger.error(f"Error in pipeline: {e}")
+        return f"Error: {e}"
 
-# if __name__ == "__main__":
-#     # Example query
-#     sample_query = "What is the content of the documents?"
-#     main(sample_query)
+
+if __name__ == "__main__":
+    # Example query
+    sample_query = "How is the PM of India?"
+    main(sample_query)
