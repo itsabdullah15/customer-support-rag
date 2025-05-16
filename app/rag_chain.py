@@ -160,7 +160,7 @@ def main(query: str) -> str:
         return f"Error: {e}"
 
 
-if __name__ == "__main__":
-    # Example query
-    sample_query = "How is the PM of India?"
-    main(sample_query)
+# if __name__ == "__main__":
+#     # Example query
+#     sample_query = "How is the PM of India?"
+#     main(sample_query)
